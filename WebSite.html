@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1°Site 3D</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400&display=swap');
+
+        :root {
+            --primary: #00ffcc;
+            --secondary: #ff00ff;
+            --bg-dark: #050505;
+        }
+
+        * { box-sizing: border-box; }
+
+        body { 
+            margin: 0; overflow: hidden; background-color: var(--bg-dark);
+            font-family: 'Roboto', sans-serif; color: white;
+            width: 100vw; height: 100vh;
+        }
+
+        #canvas-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; pointer-events: none;
+        }
+
+        #loading {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 2000; display: flex; 
+            justify-content: center; align-items: center;
+            color: var(--primary); font-family: 'Orbitron';
+            transition: opacity 0.5s;
+        }
+
+        /* NAVBAR */
+        header {
+            position: fixed; top: 0; width: 100%; 
+            padding: 1rem 2rem; 
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 100; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+        }
+
+        .logo { font-family: 'Orbitron', sans-serif; font-size: 1.3rem; color: var(--primary); font-weight: 700; }
+        
+        nav ul { 
+            list-style: none; display: flex; gap: 1.5rem; margin: 0; padding: 0; 
+        }
+        
+        nav a {
+            color: #ccc; text-decoration: none; text-transform: uppercase;
+            font-family: 'Orbitron'; font-size: 0.8rem; letter-spacing: 1px;
+            cursor: pointer; transition: 0.3s; white-space: nowrap;
+        }
+        nav a:hover { color: var(--primary); text-shadow: 0 0 8px var(--primary); }
+
+        /* Seções */
+        .content-section {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 40%; padding: 20px; z-index: 10;
+            opacity: 0; visibility: hidden; transition: all 0.6s ease-in-out;
+            pointer-events: none;
+        }
+        .content-section.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+        #section-home { left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%; }
+        #section-about { left: 8%; }
+        #section-projects { left: 5%; width: 45%; }
+        
+        #section-contact { 
+            left: 5%; width: 350px;
+            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(10px);
+            border-left: 4px solid var(--secondary); padding: 30px;
+        }
+
+        h1 { font-family: 'Orbitron'; font-size: 3rem; margin: 0 0 10px 0; line-height: 1; }
+        p { font-size: 1rem; color: #aaa; }
+
+        .project-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .project-card { background: rgba(255,255,255,0.05); padding: 15px; border-left: 2px solid var(--primary); }
+        .project-card h4 { margin: 0 0 5px 0; color: var(--primary); font-family: 'Orbitron'; }
+
+
+        .input-group { display: flex; gap: 10px; margin-bottom: 10px; width: 100%; }
+        
+
+        input { 
+            width: 100%; 
+            padding: 10px; 
+            background: rgba(255,255,255,0.1); 
+            border: 1px solid #444; 
+            color: white; 
+            outline: none;
+            box-sizing: border-box; 
+            margin-bottom: 10px; 
+        }
+
+        .input-group input { margin-bottom: 0; }
+
+        input:focus { border-color: var(--secondary); }
+        
+        button.cta { 
+            width: 100%; padding: 12px; background: transparent; 
+            border: 1px solid var(--secondary); color: var(--secondary); 
+            font-family: 'Orbitron'; cursor: pointer; transition: 0.3s; 
+            box-sizing: border-box;
+        }
+        button.cta:hover { background: var(--secondary); color: black; }
+
+    </style>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div id="loading">CARREGANDO ASSETS...</div>
+    <div id="canvas-container"></div>
+
+    <header>
+        <div class="logo">NEXUS</div>
+        <nav>
+            <ul>
+                <li><a onclick="navigateTo('home')">Início</a></li>
+                <li><a onclick="navigateTo('about')">Sobre</a></li>
+                <li><a onclick="navigateTo('projects')">Projetos</a></li>
+                <li><a onclick="navigateTo('contact')">Contato</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div id="section-home" class="content-section active">
+        <h1>NEXTIUS<span style="color: var(--primary)">CORE</span></h1>
+        <p>Experiência digital imersiva.</p>
+    </div>
+
+    <div id="section-about" class="content-section">
+        <h1 style="color: var(--secondary)">SOBRE</h1>
+        <p>Desenvolvimento WebGL de alta performance.</p>
+    </div>
+
+    <div id="section-projects" class="content-section">
+        <h1>PORTFÓLIO</h1>
+        <div class="project-grid">
+            <div class="project-card"><h4>Cyber UI</h4><p>Interface HUD</p></div>
+            <div class="project-card"><h4>Neon Racer</h4><p>Game WebGL</p></div>
+        </div>
+    </div>
+
+    <div id="section-contact" class="content-section">
+        <h1 style="color: var(--secondary)">PLAYER 1</h1>
+        <p>Conecte seu player.</p>
+        <form>
+            <div class="input-group">
+                <input type="text" placeholder="Nome">
+                <input type="text" placeholder="Sobrenome">
+            </div>
+            <input type="email" placeholder="Email">
+            <button type="button" class="cta">CONECTAR</button>
+        </form>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+
+        // SETUP
+        const container = document.getElementById('canvas-container');
+        const loadingScreen = document.getElementById('loading');
+        
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 5;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000000, 0);
+        renderer.shadowMap.enabled = true;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        container.appendChild(renderer.domElement);
+
+        // LUZES 
+        const ambLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambLight);
+        
+        const dirLight = new THREE.DirectionalLight(0xffffff, 2);
+        dirLight.position.set(5, 5, 5);
+        scene.add(dirLight);
+
+        const pLight1 = new THREE.PointLight(0x00ffcc, 50);
+        pLight1.position.set(2, 2, 2);
+        scene.add(pLight1);
+
+        const pLight2 = new THREE.PointLight(0xff00ff, 50);
+        pLight2.position.set(-2, -2, 2);
+        scene.add(pLight2);
+
+        // OBJETOS
+        const mainGroup = new THREE.Group();
+        scene.add(mainGroup);
+
+        const torusGeo = new THREE.TorusKnotGeometry(1, 0.35, 100, 16);
+        const wireMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, wireframe: true }); 
+        const baseMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const torusWire = new THREE.Mesh(torusGeo, wireMat);
+        const torusBase = new THREE.Mesh(torusGeo, baseMat);
+        mainGroup.add(torusBase);
+        mainGroup.add(torusWire);
+
+ 
+        const ctrlGroup = new THREE.Group();
+        scene.add(ctrlGroup);
+        ctrlGroup.visible = false;
+        
+
+        const loader = new FBXLoader();
+        
+ 
+        loader.load('XboxOne Controller.fbx', 
+            (object) => {
+                loadingScreen.style.opacity = 0;
+                setTimeout(() => loadingScreen.style.display = 'none', 500);
+
+   
+                object.scale.set(0.15, 0.15, 0.15); 
+                
+                object.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        if (child.material) {
+                            child.material.metalness = 0.5;
+                            child.material.roughness = 0.5;
+                        }
+                    }
+                });
+
+                // --- AJUSTE DE ROTAÇÃO ---
+                object.rotation.y = Math.PI; 
+
+                ctrlGroup.add(object);
+                console.log('Controle carregado!');
+            },
+            undefined,
+            (error) => {
+                console.error('Erro ao carregar FBX:', error);
+                loadingScreen.innerText = "ERRO: Arquivo não encontrado.";
+            }
+        );
+
+        // ANIMAÇÃO E INTERAÇÃO
+        let mouseX = 0, mouseY = 0;
+        let targetX = 0, targetY = 0;
+
+        window.addEventListener('mousemove', (e) => {
+            targetX = (e.clientX / window.innerWidth) * 2 - 1;
+            targetY = -(e.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Suavização
+            mouseX += (targetX - mouseX) * 0.05;
+            mouseY += (targetY - mouseY) * 0.05;
+
+
+            if (ctrlGroup.visible) {
+                ctrlGroup.rotation.x = mouseY * 0.5; 
+                ctrlGroup.rotation.y = mouseX * 0.5; 
+                ctrlGroup.position.y = Math.sin(Date.now() * 0.002) * 0.05;
+            } 
+            
+
+            else {
+                mainGroup.rotation.y += 0.005 + (mouseX * 0.05); 
+                mainGroup.rotation.x = (mouseY * 0.5) + (Date.now() * 0.0005);
+                
+                camera.position.x += (mouseX * 0.5 - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY * 0.5 - camera.position.y) * 0.05;
+                camera.lookAt(0,0,0);
+            }
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // --- NAVEGAÇÃO ---
+        window.navigateTo = function(id) {
+            
+            document.querySelectorAll('.content-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(`section-${id}`).classList.add('active');
+
+            if (id === 'contact') {
+                gsap.to(mainGroup.scale, {x:0, y:0, z:0, duration: 0.5});
+                
+                ctrlGroup.visible = true;
+
+                gsap.fromTo(ctrlGroup.position, {x: 8}, {x: 2, y: 0, z: 0, duration: 1.5, ease: "power2.out"});
+
+                gsap.to(ctrlGroup.scale, {x: 1.5, y: 1.5, z: 1.5, duration: 1, delay: 0.2});
+
+            } else if (id === 'projects') {
+                escondeControle();
+                mainGroup.visible = true;
+                gsap.to(mainGroup.position, {x: 3.5, y: 0, z: 0, duration: 1.5});
+                gsap.to(mainGroup.scale, {x: 1.5, y: 1.5, z: 1.5, duration: 1.5});
+                wireMat.color.setHex(0xffaa00);
+
+            } else if (id === 'about') {
+                escondeControle();
+                mainGroup.visible = true;
+                gsap.to(mainGroup.position, {x: 3.5, y: 0, z: 0, duration: 1.5});
+                gsap.to(mainGroup.scale, {x: 1, y: 1, z: 1, duration: 1.5});
+                wireMat.color.setHex(0xff00ff);
+
+            } else {
+                // HOME
+                escondeControle();
+                mainGroup.visible = true;
+                gsap.to(mainGroup.position, {x: 0, y: 0, z: 0, duration: 1.5});
+                gsap.to(mainGroup.scale, {x: 1, y: 1, z: 1, duration: 1.5});
+                wireMat.color.setHex(0x00ffcc);
+            }
+        };
+
+        function escondeControle() {
+            if(ctrlGroup.visible) {
+                gsap.to(ctrlGroup.scale, {x:0, y:0, z:0, duration: 0.5, onComplete: () => { ctrlGroup.visible = false; }});
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
